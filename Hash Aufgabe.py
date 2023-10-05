@@ -1,10 +1,13 @@
 import csv
 import matplotlib.pyplot as plt
 import numpy as np
+
 """TODO: 1. Anzahl der Tabellengröße bei der Ausführung der Funktion bestimmen können, 
 2. Anzahl der Inputwerte bestimmen
 3. gleichzeitig verändert sich die Länge des Mittelwertes in der midquare methode. 
 4. Histogramm bauen """
+
+
 
 def read_csv_file(file_path):
     rows = []
@@ -14,7 +17,7 @@ def read_csv_file(file_path):
         for row in csv_reader:
             rows.append(row)
             row_count += 1
-            if row_count == 50:
+            if row_count == 50: 
                 break
     return rows
 
@@ -25,6 +28,7 @@ def key_Wert(input_Wert):
     return key  # Die Rückgabe sollte außerhalb der Schleife erfolgen
 
 def mid_square_hash(input_key: int):
+    hashsize = 1000
     squared = input_key * input_key
     str_squared = str(squared)
     length = len(str_squared)
@@ -35,7 +39,6 @@ def mid_square_hash(input_key: int):
 
 file_path = "/Users/furkan/Downloads/archive/de_DE.csv"
 rows = read_csv_file(file_path)
-hashsize = 1000
 
 hashliste = set()
 dublikat = []
@@ -54,3 +57,10 @@ if dublikat:
         print(wert)
 else: 
     print("Keine Dublikate gefunden")
+
+gaussian_numbers = np.random.normal(size= 10000)
+plt.hist(gaussian_numbers)
+plt.title("Gaussian Histogram")
+plt.xlabel("Tabelle")
+plt.ylabel("Kollisionen")
+plt.show()
