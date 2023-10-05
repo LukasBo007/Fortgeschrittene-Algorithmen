@@ -1,7 +1,10 @@
 import csv
-
-file_path = "C:\Users\lukib\Downloads\de.DE.csv"
-
+import matplotlib.pyplot as plt
+import numpy as np
+"""TODO: 1. Anzahl der Tabellengröße bei der Ausführung der Funktion bestimmen können, 
+2. Anzahl der Inputwerte bestimmen
+3. gleichzeitig verändert sich die Länge des Mittelwertes in der midquare methode. 
+4. Histogramm bauen """
 
 def read_csv_file(file_path):
     rows = []
@@ -11,33 +14,43 @@ def read_csv_file(file_path):
         for row in csv_reader:
             rows.append(row)
             row_count += 1
-            if row_count == 100000:
+            if row_count == 50:
                 break
     return rows
 
+def key_Wert(input_Wert):
+    key = 0
+    for buchstabe in input_Wert:
+        key += ord(buchstabe)
+    return key  # Die Rückgabe sollte außerhalb der Schleife erfolgen
+
+def mid_square_hash(input_key: int):
+    squared = input_key * input_key
+    str_squared = str(squared)
+    length = len(str_squared)
+    start = (length - 3) // 2
+    end = start + 3
+    mid_value = int(str_squared[start:end])
+    return mid_value % hashsize
+
+file_path = "/Users/furkan/Downloads/archive/de_DE.csv"
 rows = read_csv_file(file_path)
-
-hashsize = 100000
-def hash(string):
-    summe = 0
-    for buchstabe in string: 
-        summe += ord(buchstabe)
-    return summe % hashsize 
-
+hashsize = 1000
 
 hashliste = set()
 dublikat = []
 
 for row in rows:
-    hashwert = hash(str(row))
-    if hashwert in hashliste:
+    key = key_Wert(str(row))
+    hashwert = mid_square_hash(key)
+    while hashwert in hashliste:  # Wenn der Hashwert bereits existiert, behandeln Sie die Kollision
         dublikat.append(hashwert)
-    else:
-        hashliste.add(hashwert)
+        hashwert = mid_square_hash(hashwert)  # Eine einfache Methode, um die Kollision zu behandeln
+    hashliste.add(hashwert)
 
 if dublikat:
-    print("Folgender Wert ist ein Dublikat")
+    print("Folgende Werte sind Dublikate:")
     for wert in dublikat:
         print(wert)
 else: 
-    print("Keine Dublikate gefunden") 
+    print("Keine Dublikate gefunden")
