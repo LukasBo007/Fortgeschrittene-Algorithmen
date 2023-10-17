@@ -8,7 +8,7 @@ def key_Wert(input_Wert):
     return sum(ord(buchstabe) for buchstabe in input_Wert)
 
 def multiplication_hash(input_key: int, hashsize, max_recursion=1031, current_recursion=0):
-    A = (math.sqrt(5) - 1) / 2
+    A = 0.66543456789
     hash_value = int(hashsize * (input_key * A % 1))
     
     if hash_value in hash_values and current_recursion < max_recursion:
