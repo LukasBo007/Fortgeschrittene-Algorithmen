@@ -1,0 +1,107 @@
+import hashlib
+import random
+import string
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+class HyperLogLog:
+    def __init__(self, b=10):
+        self.m = 2**b
+        self.buckets = [0] * self.m
+        self.b = b
+
+    def _hash(self, value):
+        return int(hashlib.sha256(value.encode('utf-8')).hexdigest(), 16)
+
+    def _get_bucket(self, hash_value):
+        return hash_value & (self.m - 1)
+
+    def _rho(self, hash_value):
+        hash_value >>= self.b
+        rho = 1
+        while hash_value & 1 == 0 and rho <= 64:
+            rho += 1
+            hash_value >>= 1
+        return rho
+
+    def add(self, value):
+        hash_value = self._hash(value)
+        bucket = self._get_bucket(hash_value)
+        self.buckets[bucket] = max(self.buckets[bucket], self._rho(hash_value))
+
+    def count(self, adjust_outliers=False):
+        if adjust_outliers:
+            # Convert buckets to DataFrame for outlier handling
+            bucket_data = pd.DataFrame(self.buckets, columns=['bucket_values'])
+
+            # Calculate Q1, Q3, and IQR
+            Q1 = bucket_data['bucket_values'].quantile(0.30)
+            Q3 = bucket_data['bucket_values'].quantile(0.70)
+            IQR = Q3 - Q1
+
+            # Calculate upper and lower bounds for outliers
+            upper_bound = Q3 + 1.5 * IQR
+            lower_bound = Q1 - 1.5 * IQR
+
+            # Set outliers to upper and lower bounds
+            bucket_data.loc[bucket_data['bucket_values'] > upper_bound, 'bucket_values'] = upper_bound
+            bucket_data.loc[bucket_data['bucket_values'] < lower_bound, 'bucket_values'] = lower_bound
+
+            # Use adjusted buckets for calculation
+            buckets_for_calculation = bucket_data['bucket_values'].tolist()
+        else:
+            # Use original buckets for calculation
+            buckets_for_calculation = self.buckets
+
+        # Calculate E
+        Z = sum([2**-x for x in buckets_for_calculation])
+        E = self.m**2 / Z * 0.7213 / (1 + 1.079 / self.m)
+        return round(E)
+
+# Generate 1 million random strings
+num_strings = 1000000
+random_strings = {''.join(random.choices(string.ascii_letters + string.digits, k=16)) for _ in range(num_strings)}
+
+# Initialize HyperLogLog and add strings
+hll = HyperLogLog()
+for s in random_strings:
+    hll.add(s)
+
+# Estimate the count before removing outliers
+estimated_count_before = hll.count()
+
+# Convert buckets to DataFrame for Seaborn visualization
+bucket_data_before = pd.DataFrame(hll.buckets, columns=['bucket_values'])
+
+# Seaborn Boxplot before removing outliers - vertikale Darstellung
+sns.set_style("whitegrid")
+sns.boxplot(data=bucket_data_before, y='bucket_values', orient='v')
+plt.title('Boxplot of Buckets (Before Removing Outliers)')
+plt.show()
+
+# Estimate the count after removing outliers
+estimated_count_after = hll.count(adjust_outliers=True)
+
+# Convert buckets to DataFrame for Seaborn visualization after removing outliers
+bucket_data_after = pd.DataFrame(hll.buckets, columns=['bucket_values'])
+
+# Seaborn Boxplot after removing outliers - vertikale Darstellung
+sns.boxplot(data=bucket_data_after, y='bucket_values', orient='v')
+plt.title('Boxplot of Buckets (After Removing Outliers)')
+plt.show()
+
+# Calculate actual count
+actual_count = len(random_strings)
+
+# Calculate error in percentage
+error_before = abs(estimated_count_before - actual_count) / actual_count * 100
+error_after = abs(estimated_count_after - actual_count) / actual_count * 100
+
+# Outputting the results
+print(f"Estimated Count (Before Removing Outliers): {estimated_count_before}")
+print(f"Estimated Count (After Removing Outliers): {estimated_count_after}")
+print(f"Actual Count: {actual_count}")
+print(f"Error (Before Removing Outliers): {error_before}%")
+print(f"Error (After Removing Outliers): {error_after}%")
